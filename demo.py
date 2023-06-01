@@ -15,7 +15,7 @@ MODEL = 'full' #Options: ['full', 'simple'].
 CLASSES = ['bottle', 'banana'] # classes to detect
 BOX_TRESHOLD = 0.35
 TEXT_TRESHOLD = 0.25
-image = cv2.imread("spot_detection/data/example.jpg")  #image from camera for spot
+image = cv2.imread("data/examples/example.jpg")  #image from camera for spot
 
 spot_detection = NovoOpenDetector(model='full', classes = CLASSES, box_threshold=BOX_TRESHOLD, text_threshold=TEXT_TRESHOLD)
 
