@@ -1,0 +1,13 @@
+torch
+torchvision
+transformers
+addict
+yapf
+timm
+numpy
+opencv-python
+supervision>=0.8.0
+pycocotools
+wget
+gdown
+scipy

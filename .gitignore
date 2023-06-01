@@ -1,0 +1,4 @@
+GroundingDINO
+weights/*
+data/*
+results/*
