@@ -81,6 +81,7 @@ class NovoOpenDetector:
             return (image, None, None, None)
         else:
             # Just keep most confident detection
+            print(detections)
             if len(detections) >= 2:
                 # Get the attributes of the most confident detection for simplicity in picking
                 max_confidence_index = np.argmax(detections.confidence)
@@ -93,37 +94,44 @@ class NovoOpenDetector:
                 # Create a new instance of the Detection class with the most confident detection
                 detections = Detections(xyxy=xyxy, mask=mask, confidence=confidence, class_id=class_id, tracker_id=tracker_id)
 
-
             x_min, y_min, x_max, y_max = detections.xyxy[0] 
-            centroid_x = (x_max - x_min) / 2 + x_min
-            centroid_y = (y_max - y_min) / 2 + y_min
-            centroid = (int(centroid_x), int(centroid_y))
-            
-            
-            labels = [
-                f"{self.CLASSES[class_id]} {confidence:0.2f}" 
-                for _, _, confidence, class_id, _ 
-                in detections]
-            
-            object,confidence = labels[0].split(" ")
+            x_size,y_size = x_max - x_min, y_max - y_min
+            #print(x_size, y_size)
+            #print(image.shape)
+            # Filtering for to small detections
+            if (x_size * y_size) > (0.2 * (image.shape[0] * image.shape[1])):
+                return (image, None, None, None)
+            else: 
+                centroid_x = (x_max - x_min) / 2 + x_min
+                centroid_y = (y_max - y_min) / 2 + y_min
+                centroid = (int(centroid_x), int(centroid_y))
                 
-            box_annotator = sv.BoxAnnotator()
-            
-            annotated_image = box_annotator.annotate(scene=image.copy(), detections=detections, labels=labels)
-            
-            if self.model == 'full': #
-                #FOR FULL MODEL YOU NEED GPU/CUDA
-                # convert detections to masks
-                detections.mask = self.segment(
-                    image=cv2.cvtColor(image, cv2.COLOR_BGR2RGB),
-                    xyxy=detections.xyxy
-                )
-
-                mask_annotator = sv.MaskAnnotator()
-                annotated_image = mask_annotator.annotate(scene=annotated_image, detections=detections)
-                centroid = center_of_mass(detections.mask[0])
-                centroid = (int(centroid[1]), int(centroid[0])) #inverse these as they come back y,x. Also integer for manipulation
+                
+                labels = [
+                    f"{self.CLASSES[class_id]} {confidence:0.2f}" 
+                    for _, _, confidence, class_id, _ 
+                    in detections]
+                
+                object,confidence = labels[0].split(" ")
                     
-            cv2.circle(annotated_image, (int(centroid[0]), int(centroid[1])), 15, (255, 0, 0), -1)
-            cv2.imwrite(os.path.join(self.HOME, "results", 'result.jpg'), annotated_image)
-            return (annotated_image, object, confidence, centroid)  
+                box_annotator = sv.BoxAnnotator()
+                
+                annotated_image = box_annotator.annotate(scene=image.copy(), detections=detections, labels=labels)
+                
+                if self.model == 'full': #
+                    #FOR FULL MODEL YOU NEED GPU/CUDA
+                    # convert detections to masks
+                    detections.mask = self.segment(
+                        image=cv2.cvtColor(image, cv2.COLOR_BGR2RGB),
+                        xyxy=detections.xyxy
+                    )
+
+                    mask_annotator = sv.MaskAnnotator()
+                    annotated_image = mask_annotator.annotate(scene=annotated_image, detections=detections)
+                    centroid = center_of_mass(detections.mask[0])
+                    centroid = (int(centroid[1]), int(centroid[0])) #inverse these as they come back y,x. Also integer for manipulation
+                        
+                cv2.circle(annotated_image, (int(centroid[0]), int(centroid[1])), 15, (255, 0, 0), -1)
+                cv2.imwrite(os.path.join(self.HOME, "images", 'detection.jpg'), annotated_image)
+                cv2.imwrite(os.path.join(self.HOME, "images", 'frame.jpg'), image)
+                return (annotated_image, object, confidence, centroid)  
